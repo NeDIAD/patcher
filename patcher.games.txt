@@ -1,0 +1,14 @@
+"Games"
+{
+    "csgo"
+    {
+        "Signatures"
+        {
+            "RecordDataIntoTrack"
+            {
+                "library" "server"
+                "linux"   "\x55\x89\xE5\x57\x56\x53\x83\xEC\x1C\x8B\x45\x14\x8B\x7D\x0C"
+            }
+        }
+    }
+}
