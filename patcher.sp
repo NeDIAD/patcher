@@ -65,13 +65,13 @@ float g_fLastOrigin[MAXPLAYERS + 1][3];
 
 public void OnPluginStart()
 {
-    g_cvUntrustedAngles = CreateConVar("patch_untrusted_angles", "0", "Set to '1', to clamp untrusted angles.");
-    g_cvExtendedAngles  = CreateConVar("patch_extended_angles" , "0", "Set to '1', to disable extended angles.");
-    g_cvAntiExploit     = CreateConVar("patch_anti_exploit"    , "0", "Set to '1', to disable anti-exploit.");
-    g_cvAirStuck        = CreateConVar("patch_air_stuck"       , "0", "Set to '1', to prohibit air-stuck.");
-    g_cvFakeDuck        = CreateConVar("patch_fake_duck"       , "0", "Set to '1', to disable fake duck.");
-    g_cvLagPeek         = CreateConVar("patch_lagpeek"         , "0", "Set to '1', to disable lagpeek.");
-    g_cvRoll            = CreateConVar("patch_roll"            , "0", "Set to '1', to disable body lean.");
+    g_cvUntrustedAngles = CreateConVar("patch_untrusted_angles", "0", "Set to '1', to clamp untrusted angles." , FCVAR_NONE, true, 0.0, true, 1.0);
+    g_cvExtendedAngles  = CreateConVar("patch_extended_angles" , "0", "Set to '1', to disable extended angles.", FCVAR_NONE, true, 0.0, true, 1.0);
+    g_cvAntiExploit     = CreateConVar("patch_anti_exploit"    , "0", "Set to '1', to disable anti-exploit."   , FCVAR_NONE, true, 0.0, true, 1.0);
+    g_cvAirStuck        = CreateConVar("patch_air_stuck"       , "0", "Set to '1', to prohibit air-stuck."     , FCVAR_NONE, true, 0.0, true, 1.0);
+    g_cvFakeDuck        = CreateConVar("patch_fake_duck"       , "0", "Set to '1', to disable fake duck."      , FCVAR_NONE, true, 0.0, true, 1.0);
+    g_cvLagPeek         = CreateConVar("patch_lagpeek"         , "0", "Set to '1', to disable lagpeek."        , FCVAR_NONE, true, 0.0, true, 1.0);
+    g_cvRoll            = CreateConVar("patch_roll"            , "0", "Set to '1', to disable body lean."      , FCVAR_NONE, true, 0.0, true, 1.0);
 
     SetupDetours();
     HookEvent("player_death", OnPlayerDeath);
@@ -150,7 +150,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
     if (!IsValidClient(client) || !IsPlayerAlive(client)) return Plugin_Continue; // skip dead
     
     // untrusted angles fix
-    if (GetConVarBool(g_cvUntrustedAngles))
+    if (g_cvUntrustedAngles.BoolValue)
     {
         angles[0] = Clamp(angles[0], -89.0,  89.0);     // pitch
         angles[1] = Clamp(angles[1], -180.0, 180.0);    // yaw
@@ -158,19 +158,19 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
     }
     
     // anti exploit fix
-    if (GetConVarBool(g_cvAntiExploit) && !GetEntProp(client, Prop_Data, "m_bLagCompensation"))
+    if (g_cvAntiExploit.BoolValue && !GetEntProp(client, Prop_Data, "m_bLagCompensation"))
         SetEntProp(client, Prop_Data, "m_bLagCompensation", 1);
 
     // fake duck fix
-    if (GetConVarBool(g_cvFakeDuck) && buttons & IN_BULLRUSH)
+    if (g_cvFakeDuck.BoolValue && buttons & IN_BULLRUSH)
         buttons &= ~IN_BULLRUSH;
 
     // roll fix
-    if (GetConVarBool(g_cvRoll) && angles[2] != 0)
+    if (g_cvRoll.BoolValue && angles[2] != 0)
         angles[2] = 0.0;
 
     // air stuck fix
-    if (!GetConVarBool(g_cvAirStuck) || !IsAirStucking(vel, buttons, tickcount, cmdnum))
+    if (!g_cvAirStuck.BoolValue || !IsAirStucking(vel, buttons, tickcount, cmdnum))
         g_iAirStuckTicks[client] = 0;
     else if (++g_iAirStuckTicks[client] >= AIRSTUCK_TICKS) {
         ForcePlayerSuicide(client);
@@ -186,7 +186,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 // long ass arguments x2
 public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float vel[3], const float angles[3], int weapon, int subtype, int cmdnum, int tickcount, int seed, const int mouse[2])
 {
-    if (!GetConVarBool(g_cvExtendedAngles) || !IsValidClient(client)) return; // skip disabled
+    if (!g_cvExtendedAngles.BoolValue || !IsValidClient(client)) return; // skip disabled
 
     float eye_angles[3];
     float v_angle[3];
@@ -202,7 +202,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 
 public MRESReturn RecordDataIntoTrackPre(DHookParam params)
 {
-    if (!GetConVarBool(g_cvLagPeek)) return MRES_Ignored;
+    if (!g_cvLagPeek.BoolValue) return MRES_Ignored;
 
     int client = params.Get(1);
     if (!IsValidClient(client)) return MRES_Ignored;
