@@ -47,8 +47,10 @@ ConVar g_cvRoll;                // Roll / Body Lean
 int g_iAirStuckTicks[MAXPLAYERS + 1];
 
 // lagpeek
-#define TELEPORT_MAX 256.0
-#define SHOT_RECENT  0.5
+#define TELEPORT_MAX   256.0
+#define SHOT_RECENT    0.5
+#define TICK_TOLERANCE 64
+#define AIRSTUCK_TICKS 16
 
 DynamicDetour g_ddRecordDataIntoTrack;
 
@@ -170,7 +172,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
     // air stuck fix
     if (!GetConVarBool(g_cvAirStuck) || !IsAirStucking(vel, buttons, tickcount, cmdnum))
         g_iAirStuckTicks[client] = 0;
-    else if (++g_iAirStuckTicks[client] >= 16) {
+    else if (++g_iAirStuckTicks[client] >= AIRSTUCK_TICKS) {
         ForcePlayerSuicide(client);
         g_iAirStuckTicks[client] = 0;
     }
@@ -219,7 +221,7 @@ public MRESReturn RecordDataIntoTrackPre(DHookParam params)
     bool defensive = sim <= g_fLastSimulation[client]
         && (move_sq > 0.0 || dz != 0.0)
         && move_sq < TELEPORT_MAX * TELEPORT_MAX
-        && g_iTickOffset[client] > 64;
+        && g_iTickOffset[client] > TICK_TOLERANCE;
 
     if (defensive)
     {
