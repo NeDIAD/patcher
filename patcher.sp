@@ -1,6 +1,7 @@
 /*
     /ᐠ. ｡.ᐟ\ᵐᵉᵒʷˎˊ˗ 
-    Credits: NeDIAD, imi-tat0r, dragos112 (hiraeeth), r4klatif
+    Credits: NeDIAD, imi-tat0r, dragos112 (hiraeeth), r4klatif, kRatoss
+        https://forums.alliedmods.net/showthread.php?t=327591
         https://github.com/r4klatif/extended-angle-fix
         https://github.com/Alyx-Network/HvH-Essentials
         https://github.com/HvH-gg/CSGO-Essentials
@@ -21,7 +22,7 @@
 public Plugin myinfo =
 {
     name        = "Patcher",
-    author      = "NeDIAD, imi-tat0r, r4klatif, dragos112, unknowncheats, other developers",
+    author      = "NeDIAD, imi-tat0r, r4klatif, dragos112, kRatoss, unknowncheats, other developers",
     description = "All-In-One patcher for most of CS:GO HvH exploits.",
     version     = "1.0.0",
     url         = "github.com/NeDIAD/Patcher"
@@ -30,6 +31,8 @@ public Plugin myinfo =
 /*
     Variables
 */
+
+#define INT_MAX 2147483647
 
 // convars, 1 = patch this exploit, 0 = do nothing
 ConVar g_cvUntrustedAngles;
@@ -86,16 +89,11 @@ bool IsValidClient(int client)
     return client > 0 && client <= MaxClients && IsClientConnected(client) && IsClientInGame(client);
 }
 
-bool IsAirStucking(int client, float velocity[3], int buttons)
+bool IsAirStucking(float velocity[3], int buttons, int tickcount, int cmdnum)
 {
+    if ((cmdnum != INT_MAX || tickcount != INT_MAX) && tickcount != 0) return false;
     if (buttons & IN_ATTACK) return false;
-    if (GetEntPropEnt(client, Prop_Send, "m_hGroundEntity") != -1) return false;
-    if (GetEntityFlags(client) & FL_ONGROUND) return false;
-
-    MoveType mt = GetEntityMoveType(client);
-    if (mt == MOVETYPE_LADDER || mt == MOVETYPE_NOCLIP || mt == MOVETYPE_NONE)
-        return false;
-
+    
     return velocity[0] == 0.0 && velocity[1] == 0.0 && velocity[2] == 0.0;
 }
 
@@ -170,7 +168,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
         angles[2] = 0.0;
 
     // air stuck fix
-    if (!GetConVarBool(g_cvAirStuck) || !IsAirStucking(client, vel, buttons))
+    if (!GetConVarBool(g_cvAirStuck) || !IsAirStucking(vel, buttons, tickcount, cmdnum))
         g_iAirStuckTicks[client] = 0;
     else if (++g_iAirStuckTicks[client] >= 16) {
         ForcePlayerSuicide(client);
