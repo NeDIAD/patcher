@@ -99,11 +99,6 @@ bool IsAirStucking(int client, float velocity[3], int buttons)
     return velocity[0] == 0.0 && velocity[1] == 0.0 && velocity[2] == 0.0;
 }
 
-bool OriginsEqual(const float a[3], const float b[3])
-{
-    return a[0] == b[0] && a[1] == b[1] && a[2] == b[2];
-}
-
 float GetShotTime(int client)
 {
     int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
@@ -219,10 +214,12 @@ public MRESReturn RecordDataIntoTrackPre(DHookParam params)
 
     float dx = origin[0] - g_fLastOrigin[client][0];
     float dy = origin[1] - g_fLastOrigin[client][1];
+    float dz = origin[2] - g_fLastOrigin[client][2];
+    
     float move_sq = dx * dx + dy * dy;
 
     bool defensive = sim <= g_fLastSimulation[client]
-        && !OriginsEqual(origin, g_fLastOrigin[client])
+        && (move_sq > 0.0 || dz != 0.0)
         && move_sq < TELEPORT_MAX * TELEPORT_MAX
         && g_iTickOffset[client] > 64;
 
