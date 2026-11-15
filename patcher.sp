@@ -24,7 +24,7 @@ public Plugin myinfo =
     name        = "Patcher",
     author      = "NeDIAD, imi-tat0r, r4klatif, dragos112, kRatoss, unknowncheats, other developers",
     description = "All-In-One patcher for most of CS:GO HvH exploits.",
-    version     = "1.0.0",
+    version     = "1.0.1",
     url         = "github.com/NeDIAD/Patcher"
 }
 
@@ -105,16 +105,15 @@ float GetShotTime(int client)
     return weapon != -1 ? GetEntPropFloat(weapon, Prop_Send, "m_fLastShotTime") : 0.0;
 }
 
-
 void ResetClient(int client)
 {
     g_iAirStuckTicks[client]  = 0;
     g_iTickOffset[client]     = 0;
     g_fLastSimulation[client] = 0.0;
     
-    g_fLastOrigin[client][0] = 0.0;
-    g_fLastOrigin[client][1] = 0.0;
-    g_fLastOrigin[client][2] = 0.0;
+    g_fLastOrigin[client][0]  = 0.0;
+    g_fLastOrigin[client][1]  = 0.0;
+    g_fLastOrigin[client][2]  = 0.0;
 }
 
 /*
@@ -207,6 +206,9 @@ public MRESReturn RecordDataIntoTrackPre(DHookParam params)
     int client = params.Get(1);
     if (!IsValidClient(client)) return MRES_Ignored;
 
+    if (g_fLastSimulation[client] > GetGameTime())
+        g_fLastSimulation[client] = 0.0;
+
     float sim = GetEntPropFloat(client, Prop_Data, "m_flSimulationTime");
 
     float origin[3];
@@ -225,8 +227,11 @@ public MRESReturn RecordDataIntoTrackPre(DHookParam params)
 
     if (defensive)
     {
-        float shot = GetShotTime(client);
-        if (shot <= 0.0 || GetGameTime() - shot >= SHOT_RECENT)
+        float shot  = GetShotTime(client);
+        float delta = GetGameTime() - shot;
+
+        // delta < 0 = tickbase shift
+        if (shot <= 0.0 || delta < 0.0 || delta >= SHOT_RECENT)
         {
             sim = g_fLastSimulation[client] + GetTickInterval();
             SetEntPropFloat(client, Prop_Data, "m_flSimulationTime", sim);
@@ -249,6 +254,12 @@ public Action OnPlayerDeath(Event event, const char[] name, bool broadcast)
 
     g_iAirStuckTicks[client] = 0;
     return Plugin_Continue;
+}
+
+public void OnMapStart()
+{
+    for (int client = 1; client <= MaxClients; client++)
+        ResetClient(client);
 }
 
 public void OnClientConnected(int client)
